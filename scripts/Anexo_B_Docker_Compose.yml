@@ -1,0 +1,43 @@
+## Anexo D: Script de Orquestación de Infraestructura Local en Docker Compose (YAML)
+
+# Nota. Este script de infraestructura como código define los contenedores locales analizados en la sección 6.1.1, garantizando que el backend de NestJS y la base de datos PostgreSQL se levanten de forma unificada y conectada.
+
+version: '3.8'
+
+services:
+  # 1. Contenedor de la Base de Datos Relacional
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: backlogpulse_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ClaveSeguraDesarrollo2026!
+      POSTGRES_DB: backlogpulse_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Contenedor del Servidor Backend (API REST en NestJS)
+  api_server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: backlogpulse_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=postgres_db # Se conecta usando el nombre del servicio
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=ClaveSeguraDesarrollo2026!
+      - DB_DATABASE=backlogpulse_db
+      - JWT_SECRET=PulseEngineSecretKey_2026_SystemsEngineeringUniversidadPamplona
+    depends_on:
+      - postgres_db # No se levanta hasta que la base de datos esté lista
+
+volumes:
+  postgres_data: # Mantiene los datos guardados aunque se apague al contenedor

@@ -1,0 +1,69 @@
+## Anexo E: Script de Integración Continua en GitHub Actions (YAML)
+
+# Nota. Este script de automatización describe el pipeline de integración continua analizado en la sección 6.2.1, configurado para validar la compilación limpia y la calidad sintáctica tanto de NestJS como de Flutter de forma automatizada ante cada actualización del repositorio.
+
+name: BacklogPulse - Verificación de Integración Continua (CI)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # =========================================================================
+  # TAREA 1: VALIDACIÓN AUTOMATIZADA DEL SERVIDOR BACKEND (NestJS)
+  # =========================================================================
+  verify-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código fuente del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar el entorno de ejecución Node.js (v20 LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './server/package-lock.json'
+
+      - name: Instalar inventario de dependencias del servidor
+        run: |
+          cd server
+          npm install
+
+      - name: Validar la compilación estática de TypeScript y NestJS
+        run: |
+          cd server
+          npm run build
+
+  # =========================================================================
+  # TAREA 2: VALIDACIÓN AUTOMATIZADA DEL CLIENTE LIGERO (Flutter Mobile)
+  # =========================================================================
+  verify-client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código fuente del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar el entorno virtual de Java (Requisito para compilación)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Configurar el SDK de Flutter (Canal Estable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.19.x'
+
+      - name: Descargar paquetes y dependencias de Pubspec
+        run: |
+          cd client
+          flutter pub get
+
+      - name: Ejecutar el analizador estático de código (Linter de Flutter)
+        run: |
+          cd client
+          flutter analyze
